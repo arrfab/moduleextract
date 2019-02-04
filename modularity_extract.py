@@ -89,6 +89,9 @@ def get_module_v2(module):
     if 'components' in module:
         if 'rpms' in module['components']:
             for item in module['components']['rpms']:
+                if 'arches' in module['components']['rpms'][item]:
+                    if module['arch'] not in module['components']['rpms'][item]['arches']:
+                        continue
                 if 'buildorder' not in module['components']['rpms'][item]:
                     module['components']['rpms'][item]['buildorder'] = 99999999
                 if 'sourcename' not in module['components']['rpms'][item]:
