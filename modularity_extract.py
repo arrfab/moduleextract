@@ -60,8 +60,12 @@ def get_module_v2(module):
     result = {}
 
     result[module['arch']] = {}
-    result[module['arch']]['buildmacros'] = ''
 
+    result[module['arch']]['summary'] = module['summary']
+    result[module['arch']]['description'] = module['description']
+    result[module['arch']]['license'] = module['license']
+
+    result[module['arch']]['buildmacros'] = ''
     if 'buildopts' in module:
         if 'rpms' in module['buildopts']:
             if 'macros' in module['buildopts']['rpms']:
