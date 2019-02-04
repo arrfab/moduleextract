@@ -15,32 +15,48 @@ def read_file(filename):
 
     return raw_data
 
-def find_modules(raw_data):
+def find_modules_and_defaults(raw_data):
     ''' Find all modules '''
     modules = {}
+    defaults = []
+
     for module in raw_data:
-        if module['document'] != 'modulemd':
-            continue
-        if str(module['version']) == '1':
-            raise NotImplementedError('No support for version 1 format right now')
-        elif str(module['version']) == '2':
-            if module['data']['name'] not in modules:
-                modules[module['data']['name']] = {}
-            if module['data']['stream'] not in modules[module['data']['name']]:
-                modules[module['data']['name']][module['data']['stream']] = {}
-            if module['data']['version'] not in modules[module['data']['name']][module['data']['stream']]:
-                modules[module['data']['name']][module['data']['stream']][module['data']['version']] = {}
-            if module['data']['context'] not in modules[module['data']['name']][module['data']['stream']][module['data']['version']]:
-                modules[module['data']['name']][module['data']['stream']][module['data']['version']][module['data']['context']] = {}
+        if module['document'] == 'modulemd':
+            if str(module['version']) == '1':
+                raise NotImplementedError('No support for version 1 format right now')
+            elif str(module['version']) == '2':
+                if module['data']['name'] not in modules:
+                    modules[module['data']['name']] = {}
+                if module['data']['stream'] not in modules[module['data']['name']]:
+                    modules[module['data']['name']][module['data']['stream']] = {}
+                if module['data']['version'] not in modules[module['data']['name']][module['data']['stream']]:
+                    modules[module['data']['name']][module['data']['stream']][module['data']['version']] = {}
+                if module['data']['context'] not in modules[module['data']['name']][module['data']['stream']][module['data']['version']]:
+                    modules[module['data']['name']][module['data']['stream']][module['data']['version']][module['data']['context']] = {}
 
-            modules[module['data']['name']][module['data']['stream']][module['data']['version']][module['data']['context']] = get_module_v2(module['data'])
-        else:
-            raise NotImplementedError('Unknown metadata version %s' % module['version'])
+                modules[module['data']['name']][module['data']['stream']][module['data']['version']][module['data']['context']] = get_module_v2(module['data'])
+            else:
+                raise NotImplementedError('Unknown metadata version %s' % module['version'])
 
-    return modules
+        elif module['document'] == 'modulemd-defaults':
+            if str(module['version']) == '1':
+                defaults.append(get_module_defaults_v1(module['data']))
+            else:
+                raise NotImplementedError('Unknown metadata version %s' % module['version'])
+
+    # sort defaults by module name and then stream
+    defaults.sort(key=operator.itemgetter('module', 'stream'))
+
+    return (modules, defaults)
+
+def get_module_defaults_v1(module_defaults):
+    ''' Extract the relevant v1 metadata for document: modulemd-defaults'''
+    if 'stream' not in module_defaults:
+        module_defaults['stream'] = None
+    return module_defaults
 
 def get_module_v2(module):
-    ''' Extract the relevant v2 metadata '''
+    ''' Extract the relevant v2 metadata for document: modulemd'''
     result = {}
 
     result[module['arch']] = {}
@@ -117,4 +133,7 @@ if __name__ == '__main__':
 
     RAW_DATA = read_file(ARGS.filename)
 
-    MODULES = find_modules(RAW_DATA)
+    MODULES = find_modules_and_defaults(RAW_DATA)
+
+    import pprint
+    pprint.pprint(MODULES)
